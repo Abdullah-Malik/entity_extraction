@@ -232,7 +232,23 @@ for _ in trange(epochs, desc="Epoch"):
         logits = logits.detach().cpu().numpy()
         label_ids = b_labels.to('cpu').numpy()
         predictions.extend([list(p) for p in np.argmax(logits, axis=2)])
-        true_labels.append(label_ids)
+
+        #true_labels.append(label_ids)
+        true_labels.extend([list(l) for l in label_ids])
+
+        #print(true_labels)
+        #print(predictions[0])
+        #print("Prediction")
+        #print(true_labels[0])
+
+        #print(len(predictions))
+        #print(len(true_labels))
+
+        #print(logits)
+        #print(label_ids)
+        #print(len(logits))
+        #print(len(label_ids))
+
         
         tmp_eval_accuracy = flat_accuracy(logits, label_ids)
         
@@ -244,8 +260,40 @@ for _ in trange(epochs, desc="Epoch"):
     eval_loss = eval_loss/nb_eval_steps
     print("Validation loss: {}".format(eval_loss))
     print("Validation Accuracy: {}".format(eval_accuracy/nb_eval_steps))
-    pred_tags = [tags_vals[p_i] for p in predictions for p_i in p]
-    valid_tags = [tags_vals[l_ii] for l in true_labels for l_i in l for l_ii in l_i]
+    
+
+    #pred_tags = [tags_vals[p_i] for p in predictions for p_i in p]
+    #valid_tags = [tags_vals[l_ii] for l in true_labels for l_i in l for l_ii in l_i]
+    #print(predictions[0:2])
+    #print("break")
+    pred_tags = []
+    valid_tags = []
+    temp_tags = []
+    #print(true_labels[0:2])
+    for p in predictions:
+      temp_tags = []
+      for p_i in p:
+        temp_tags.append(tags_vals[p_i])
+      pred_tags.append(temp_tags)
+    
+    
+    for p in true_labels:
+      temp_tags = []
+      for p_i in p:
+        temp_tags.append(tags_vals[p_i])
+      valid_tags.append(temp_tags)
+    
+
+    #for i in range():
+    #  print(len(predictions[i]))
+    #for i in range(5):
+    #  print(len(true_labels[0][i]))
+    #print(pred_tags)
+    #print(valid_tags)
+
+    #print(pred_tags[0:3])
+    #print(valid_tags[0:3])
+
     print("F1-Score: {}".format(f1_score(pred_tags, valid_tags)))
 
 torch.save(model, args.save)
@@ -269,7 +317,8 @@ for batch in valid_dataloader:
     predictions.extend([list(p) for p in np.argmax(logits, axis=2)])
 
     label_ids = b_labels.to('cpu').numpy()
-    true_labels.append(label_ids)
+    true_labels.extend([list(l) for l in label_ids])
+    #true_labels.append(label_ids)
     tmp_eval_accuracy = flat_accuracy(logits, label_ids)
 
     eval_loss += tmp_eval_loss.mean().item()
@@ -278,8 +327,26 @@ for batch in valid_dataloader:
     nb_eval_examples += b_input_ids.size(0)
     nb_eval_steps += 1
 
-pred_tags = [[tags_vals[p_i] for p_i in p] for p in predictions]
-valid_tags = [[tags_vals[l_ii] for l_ii in l_i] for l in true_labels for l_i in l ]
+#pred_tags = [[tags_vals[p_i] for p_i in p] for p in predictions]
+#valid_tags = [[tags_vals[l_ii] for l_ii in l_i] for l in true_labels for l_i in l ]
+pred_tags = []
+valid_tags = []
+temp_tags = []
+
+for p in predictions:
+  temp_tags = []
+  for p_i in p:
+    temp_tags.append(tags_vals[p_i])
+  pred_tags.append(temp_tags)
+
+
+for p in true_labels:
+  temp_tags = []
+  for p_i in p:
+    temp_tags.append(tags_vals[p_i])
+  valid_tags.append(temp_tags)
+
+
 print("Validation loss: {}".format(eval_loss/nb_eval_steps))
 print("Validation Accuracy: {}".format(eval_accuracy/nb_eval_steps))
 print("Validation F1-Score: {}".format(f1_score(pred_tags, valid_tags)))
