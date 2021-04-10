@@ -2,6 +2,7 @@ from pytorch_pretrained_bert import BertTokenizer, BertConfig
 from pytorch_pretrained_bert import BertForTokenClassification, BertAdam
 import torch
 import argparse
+import numpy as np
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -21,6 +22,8 @@ model = BertForTokenClassification.from_pretrained("bert-base-uncased", num_labe
 def keywordextract(sentence, path):
     text = sentence
     tkns = tokenizer.tokenize(text)
+    #tkns = text.lower().split(" ")
+    print(tkns)
     indexed_tokens = tokenizer.convert_tokens_to_ids(tkns)
     segments_ids = [0] * len(tkns)
     tokens_tensor = torch.tensor([indexed_tokens]).to(device)
@@ -32,9 +35,42 @@ def keywordextract(sentence, path):
                                   attention_mask=segments_tensors)
     logit = logit.detach().cpu().numpy()
     prediction.extend([list(p) for p in np.argmax(logit, axis=2)])
+    print(prediction)
+    sub_word = ""
+    prev = ""
+    extracted_entities = []
     for k, j in enumerate(prediction[0]):
-        if j==1 or j==0:
-            print(tokenizer.convert_ids_to_tokens(tokens_tensor[0].to('cpu').numpy())[k], j)
+      str = tokenizer.convert_ids_to_tokens(tokens_tensor[0].to('cpu').numpy())[k]
+      
+      if j==0:
+        if prev == "":
+          if str[0:2] != '##':
+            prev = str
+          else:
+            prev = ""
+        else:
+          if str[0:2] == '##':
+            prev = prev + str[2:]
+          else:
+            extracted_entities.append(prev)
+            prev = str
+      elif j == 1 :
+        if prev != "":
+          if str[0:2] != '##':
+            prev = prev + " " + str
+          else:
+            prev = prev + str[2:]
+      elif j == 2:
+        if prev != "":
+          if str[0:2] == '##':
             
+            prev = prev + str[2:]
+            
+          else:
+            extracted_entities.append(prev)
+            prev = ""
+    print(extracted_entities)
+      
+
 
 keywordextract(args.sentence, args.path)
